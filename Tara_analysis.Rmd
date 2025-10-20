@@ -3,3 +3,29 @@ title: "Tara_analysis"
 output: html_document
 ---
 
+# TARA Oceans Data Analysis
+
+## Setup and Package Loading
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo= TRUE)
+pacman::p_load(here, ggplot2, tidyverse)
+```
+
+## Importing CSV Files
+
+```{r importing csvs}
+piconano = read.csv("Data/tara_phytoplankton_piconano_forhomework_092821.csv")
+sample = read.csv ("Data/tara_sample_information_092821.csv" )
+```
+
+## Transforming Data
+
+```{r transforming data}
+piconano %>%
+  pivot_longer(
+    cols = starts_with("TARA"),
+    names_to = "sampleID"
+  )
+write.csv(file = piconano)
+```
