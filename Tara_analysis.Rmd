@@ -19,6 +19,20 @@ piconano = read.csv("Data/tara_phytoplankton_piconano_forhomework_092821.csv")
 sample = read.csv ("Data/tara_sample_information_092821.csv" )
 ```
 
+## Creating Merged, pivoted dataframes
+
+```{r transforming data}
+#here we are pivoting the columns containing TARA such that they are data fields.
+#made sure that column names are the same between the two data frames so they can be joined!
+piconano_long <- piconano %>%
+  pivot_longer(
+    cols = starts_with("TARA"),
+    names_to = "sampleID"
+  )
+#We are merging them based on the piconano arrangement!
+#sample_merge <- left_join(piconano_long, sample, by="sampleID")
+```
+
 # Homework Questions
 
 ## Question 1:
@@ -31,7 +45,6 @@ Determine the ten most abundant OTUs, using the column ‘totab.piconano’, whi
 top_10_piconano <- piconano %>%
   arrange(desc(totab.piconano)) %>%
   slice(1:10)
-
 ```
 
 ### BLASTING sequences
@@ -41,7 +54,7 @@ So based on our results here we can pull out info from the relevant sequence col
 Plain text will be below but I am also going to create a dataframe of this data from a csv
 
 ```{r BLAST df Creation}
-list_blast_data = read.csv("~/Documents/Repos/Oceanography 626/Oceanography-Tara-Data-Analysis/Data/top_ten_otus.csv")
+list_blast_data = read.csv("Data/top_ten_otus.csv")
 ```
 
 -   Sequence 1 (cid = 161224):
@@ -64,43 +77,43 @@ list_blast_data = read.csv("~/Documents/Repos/Oceanography 626/Oceanography-Tara
 
 -   Sequence 4 (cid = 146146):
 
-    -    Most closely related cultured isolate: (Per Ident = 100%) [AY254857.1](https://www.ncbi.nlm.nih.gov/nucleotide/AY254857.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDE01K2P014) - Dictyochophyceae
+    -   Most closely related cultured isolate: (Per Ident = 100%) [AY254857.1](https://www.ncbi.nlm.nih.gov/nucleotide/AY254857.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDE01K2P014) - Dictyochophyceae
 
     -   Most closely related uncultured isolate: (Per Ident = 100%) [KC583002.1](https://www.ncbi.nlm.nih.gov/nucleotide/KC583002.1?report=genbank&log$=nuclalign&blast_rank=2&RID=FDE2C4EW014) - uncultured Stramenopile
 
 -   Sequence 5 (cid = 73122):
 
-    -    Most closely related cultured isolate: (Per Ident = 90.15) [HG973006.1](https://www.ncbi.nlm.nih.gov/nucleotide/HG973006.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDE5PYPZ014) - Trebouxiophyceae
+    -   Most closely related cultured isolate: (Per Ident = 90.15) [HG973006.1](https://www.ncbi.nlm.nih.gov/nucleotide/HG973006.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDE5PYPZ014) - Trebouxiophyceae
 
     -   Most closely related uncultured isolate: (Per Ident = 100%) [KJ760716.1](https://www.ncbi.nlm.nih.gov/nucleotide/KJ760716.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDE87JJB015) - uncultured Eukaryote
 
 -   Sequence 6 (cid = 178099):
 
-    -    Most closely related cultured isolate: (Per Ident = 100%) [MZ611704.1](https://www.ncbi.nlm.nih.gov/nucleotide/MZ611704.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDEACX46014) - Prymnesiophyceae
+    -   Most closely related cultured isolate: (Per Ident = 100%) [MZ611704.1](https://www.ncbi.nlm.nih.gov/nucleotide/MZ611704.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDEACX46014) - Prymnesiophyceae
 
     -   Most closely related uncultured isolate: (Per Ident = 100%) [HM581637.1](https://www.ncbi.nlm.nih.gov/nucleotide/HM581637.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDED37V3014) - uncultured marine eukaryote
 
 -   Sequence 7 (cid = 231524):
 
-    -    Most closely related cultured isolate: (Per Ident = 100%) [AB058358.1](https://www.ncbi.nlm.nih.gov/nucleotide/AB058358.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDEEZN7V014) - Prymnesiophyceae
+    -   Most closely related cultured isolate: (Per Ident = 100%) [AB058358.1](https://www.ncbi.nlm.nih.gov/nucleotide/AB058358.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDEEZN7V014) - Prymnesiophyceae
 
     -   Most closely related uncultured isolate: (Per Ident = 100%) [KF62097c1.1](https://www.ncbi.nlm.nih.gov/nucleotide/KF620971.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDEHDNSC014) - Haptophyta
 
 -   Sequence 8 (cid = 78011):
 
-    -    Most closely related cultured isolate: (Per Ident = 100%) [JF791030.1](https://www.ncbi.nlm.nih.gov/nucleotide/JF791030.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDEKBB5T014) - Cryptophyceae
+    -   Most closely related cultured isolate: (Per Ident = 100%) [JF791030.1](https://www.ncbi.nlm.nih.gov/nucleotide/JF791030.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDEKBB5T014) - Cryptophyceae
 
     -   Most closely related uncultured isolate: (Per Ident = 100%) [KF130577.1](https://www.ncbi.nlm.nih.gov/nucleotide/KF130577.1?report=genbank&log$=nucltop&blast_rank=2&RID=FDFS6HAY015) - uncultured eukaryote
 
 -   Sequence 9 (cid = 211092):
 
-    -    Most closely related cultured isolate: (Per Ident = 100%) [KY368637.1](https://www.ncbi.nlm.nih.gov/nucleotide/KY368637.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDFUKB46015) - Mamiellophyceae
+    -   Most closely related cultured isolate: (Per Ident = 100%) [KY368637.1](https://www.ncbi.nlm.nih.gov/nucleotide/KY368637.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDFUKB46015) - Mamiellophyceae
 
     -   Most closely related uncultured isolate: (Per Ident = 100%) [FR874356.1](https://www.ncbi.nlm.nih.gov/nucleotide/FR874356.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDFWRPMB015) - uncultured marine picoeukaryote
 
 -   Sequence 10 (cid = 40687):
 
-    -    Most closely related cultured isolate: (Per Ident = 90.08%) [AB081517.1](https://www.ncbi.nlm.nih.gov/nucleotide/AB081517.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDFYKCCM015) - Dictyochophyceae
+    -   Most closely related cultured isolate: (Per Ident = 90.08%) [AB081517.1](https://www.ncbi.nlm.nih.gov/nucleotide/AB081517.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDFYKCCM015) - Dictyochophyceae
 
     -   Most closely related uncultured isolate: (Per Ident = 90.15%) [DQ647511.1](https://www.ncbi.nlm.nih.gov/nucleotide/DQ647511.1?report=genbank&log$=nucltop&blast_rank=1&RID=FDG5FFRG015) - uncultured marine eukaryote
 
@@ -125,23 +138,14 @@ Let’s look at some variation in distribution among the top ten OTUs. The Tara 
 
 ### Merging information
 
-```{r transforming data}
-#here we are pivoting the columns containing TARA such that they are data fields.
-#made sure that column names are the same between the two data frames so they can be joined!
-piconano_long <- piconano %>%
-  pivot_longer(
-    cols = starts_with("TARA"),
-    names_to = "sampleID"
-  )
-#We are merging them based on the piconano arrangement!
-sample_merge <- left_join(piconano_long, sample, by="sampleID")
+```{}
 ```
 
 ### Calculating Relative Abundance
 
 ```{r calculating abundance}
 abun_merge <- sample_merge %>%
-  select(rtotab, total.reads, depth) %>%
+  select(value, total.reads, depth) %>%
   mutate(
     RA = value / total.reads,
     rootRA = sqrt(RA)
