@@ -30,7 +30,7 @@ piconano_long <- piconano %>%
     names_to = "sampleID"
   )
 #We are merging them based on the piconano arrangement!
-#sample_merge <- left_join(piconano_long, sample, by="sampleID")
+sample_merge <- left_join(piconano_long, sample, by="sampleID")
 ```
 
 # Homework Questions
@@ -45,6 +45,12 @@ Determine the ten most abundant OTUs, using the column ‘totab.piconano’, whi
 top_10_piconano <- piconano %>%
   arrange(desc(totab.piconano)) %>%
   slice(1:10)
+
+#pivoting this data as well for calculations later
+pivoted_top_10_piconano <-  pivot_longer(top_10_piconano,
+    cols = starts_with("TARA"),
+    names_to = "sampleID"
+  )
 ```
 
 ### BLASTING sequences
@@ -138,13 +144,15 @@ Let’s look at some variation in distribution among the top ten OTUs. The Tara 
 
 ### Merging information
 
-```{}
+```         
 ```
 
 ### Calculating Relative Abundance
 
-```{r calculating abundance}
-abun_merge <- sample_merge %>%
+```{r calculating top 10 abundance}
+top_10_merge <- left_join(pivoted_top_10_piconano, sample, by = "sampleID")
+  
+abun_merge <- top_10_merge %>%
   select(value, total.reads, depth) %>%
   mutate(
     RA = value / total.reads,
@@ -160,3 +168,21 @@ Here I have created a new data frame and added two columns, one with the calcula
 OTUabund <- ggplot(abun_merge, aes(x=depth, y=sqrt(RA)))  + geom_boxplot()
 OTUabund
 ```
+
+## Question 3: Some Hypotheses
+
+It's hard for me to be confident in my produced graph, since It is defying my expectations. I would expect that in the DCM there would be an *increased* relative abundance relative to the surface water due to both grazing pressure and population density (it is the deep chlorophyll maximum after all). I think perhaps I have made some errors in my calculations above.
+
+Some hypothesis for how environmental factors could cause shifts in community composition.
+
+-   I think one of the most consequential environmental factors is most likely nitrogen availability, which would limit an organisms ability to maintain it's metabolism under limitation. We know from our lectures that the concentration increases with depth as primary production slows down.
+
+    -   ex situ perhaps using environmental samples we could alter the physical condition of light (light dark bottles in the lab?) and note how diversity and thus nutrient concentrations change over time?
+
+    -   I think a good in situ experimental approach might be some kind of "Nitrate Ocean Timeseries" (NOT?) where we measure nitrogen concentrations and associate them with microbial diversity.
+
+-   Adding on to the previous hypothesis, how could we demonstrate that *nitrifying archaea* play a key role in the availability of nitrates in the DCM?
+
+    -   ex situ this could be demonstrated by using the aformentioned environmental samples and comparing the production of nitrate under low light conditions with control and archaea added experimental groups - who produces more nitrate?
+
+    -   This could be demonstrated in situ through the use of metagenomics techniques looking for organisms who possess known genes for nitrification, identifying them taxonomically, and comparing nutrient availability - are the archaea there? are they nitrifying? and and is nitrate indeed elevated?
