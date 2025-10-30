@@ -39,7 +39,7 @@ sample_merge <- left_join(piconano_long, sample, by="sampleID")
 
 ## Question 1:
 
-Determine the ten most abundant OTUs, using the column ‘totab.piconano’, which is the sum of all reads of each OTU across all samples.
+Determine the ten most abundant OTUs, using the column ‘totab.piconano’, which is the sum of all reads of each OTU across all samples. I am going to use the raw piconano .csv for this, because I am just interested in determining the highest number of totab - better to do that with the unpivoted data.
 
 ### Creating top 10 list
 
@@ -47,15 +47,8 @@ Determine the ten most abundant OTUs, using the column ‘totab.piconano’, whi
 top_10_piconano <- piconano %>%
   # Remove duplicate taxogroups, keeping the one with highest abundance
   arrange(desc(totab.piconano)) %>%
-  distinct(taxogroup, .keep_all = TRUE) %>%
   # Get top 10
   slice_head(n = 10)
-
-#pivoting this data as well for calculations later
-pivoted_top_10_piconano <-  pivot_longer(top_10_piconano,
-    cols = starts_with("TARA"),
-    names_to = "sampleID"
-  )
 ```
 
 ### BLASTING sequences
@@ -133,12 +126,12 @@ list_blast_data = read.csv("Data/top_ten_otus.csv")
 Compare this information to the ‘lineage’ and ‘taxogroup’ columns in the dataset, which contain the taxonomic annotation performed by the Tara group. How much taxonomic diversity is represented by the top 10 OTUs of piconanoeukaryote phytoplankton (according to these methods)?
 
 ```{r comparing taxonomic classes}
-taxocomparison <- data.frame(list_blast_data$cult.class, list_blast_data$uncult.class, unique(top_10_piconano$taxogroup), unique(top_10_piconano$lineage))
+taxocomparison <- data.frame(list_blast_data$cult.class, list_blast_data$uncult.class, (top_10_piconano$taxogroup),(top_10_piconano$lineage))
 
 length(unique(taxocomparison$list_blast_data.cult.class))
 length(unique(taxocomparison$list_blast_data.uncult.class))
-length(taxocomparison$unique.top_10_piconano.taxogroup)
-length(taxocomparison$unique.top_10_piconano.lineage)
+length(unique(taxocomparison$X.top_10_piconano.taxogroup.))
+length(unique(taxocomparison$X.top_10_piconano.lineage.))
 ```
 
 Based on the above comparisons, I would conclude that the TARA group found more taxonomic diversity based on their methods, than by our top ten analysis.
@@ -147,18 +140,13 @@ Based on the above comparisons, I would conclude that the TARA group found more 
 
 Let’s look at some variation in distribution among the top ten OTUs. The Tara group took samples at two depths, ‘surface’ (\~3-7 meters, coded SUR) and deep chlorophyll maximum (coded DCM). The column names of the samples in the first file correspond to the Pangaea Accession Number column in the second file, which contains metadata on the samples. Merge the information in these two files in order to classify the OTU samples as surface or DCM. If you do this in Excel, transposing the data and sorting will be helpful. If you do this in R, the function pivot.longer() in the package tidyr, and merge(), may be helpful.
 
-### Merging information
-
-```         
-```
-
 ### Calculating Relative Abundance
 
-```{r calculating top 10 abundance}
-top_10_merge <- left_join(pivoted_top_10_piconano, sample, by = "sampleID")
-  
-abun_merge <- top_10_merge %>%
-  select(value, total.reads, depth, taxogroup) %>%
+```{r calculating abundance in the sample merge main file}
+# First some prep, we need to throw out the data where the "value" are 0 or it will skew our data like crazy.
+abun_merge <- sample_merge %>%
+  filter(value != 0) %>%
+  select(value, total.reads, depth, taxogroup, cid, totab.piconano) %>%
   mutate(
     RA = value / total.reads,
     rootRA = sqrt(RA)
@@ -170,30 +158,69 @@ Here I have created a new data frame and added two columns, one with the calcula
 ### Making Boxplot
 
 ```{r making boxplot}
-OTUabund <- ggplot(abun_merge, aes(x=taxogroup, y=sqrt(RA), color=depth))  + geom_boxplot()
-OTUabund + theme(
-  axis.text.x = element_text(angle = 45, hjust = 1, size = 12)
-)
+# Identify the top 10 taxogroups by total relative abundance
+top_taxogroups <- abun_merge %>%
+  group_by(taxogroup) %>%
+  summarise(total_RA = sum(RA, na.rm = TRUE)) %>%
+  slice_max(total_RA, n = 10, with_ties = FALSE) %>%  # Added with_ties = FALSE for clarity
+  pull(taxogroup)
+
+# Filter and create the plot
+OTUabund <- abun_merge %>%
+  filter(taxogroup %in% top_taxogroups) %>%
+  ggplot(aes(x = taxogroup, y = sqrt(RA), color = depth)) + 
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12)) +
+  labs(
+    x = "Taxonomic Group",
+    y = "Square Root of Relative Abundance",
+    color = "Depth",
+    title = "Top 10 Taxonomic Groups by Relative Abundance"
+  )
+
+# Display the plot
+OTUabund
+```
+
+This boxplot is almost impossible to interpret, and I believe I am calculating correctly based off of our conversation, so I am going to try to remove some outliers and clean it up. I will also give some better names and make it a bit pretty.
+
+```{r remove outliers and cleanup}
+OTUabund <- abun_merge %>%
+  filter(taxogroup %in% top_taxogroups) %>%
+  ggplot(aes(x = taxogroup, y = sqrt(RA), color = depth)) + 
+  geom_boxplot(outlier.shape = NA) +  # Remove outliers
+  coord_cartesian(ylim = c(0, quantile(sqrt(abun_merge$RA), 0.95, na.rm = TRUE))) +  # Focus on 95% of data
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12)) +
+  labs(
+    x = "Taxonomic Group",
+    y = "Sqrt Relative Abundance",
+    color = "Depth",
+    title = "Top 10 Taxonomic Groups by Relative Abundance"
+  )
+#Display plot
+OTUabund
 ```
 
 ## Question 3: Some Hypotheses
 
-**About the Graph**: To generate this figure I first sorted the given list by the "totab.piconano" column, and then returned the top ten "taxogroup" names - I kept the highest totab and filtered out redundants in that column.
+**About the Graph:** After all of this I am still not very confident in what I have generated, mostly due to the meta reason that a homework assignment should probably result in some clear relationships and they are still not visible here.
 
 **What is the Cause of This Phenomenon?:**
 
-Availability of nutrients and light are going to be the primary driving factors of the phenomena we are observing here.
+Availability of nutrients and light are going to be the primary driving factors of the phenomena we are observing here, some of the taxa are primary producers and others are grazers or decomposers so this will affect their abundance at certain depths of the water column based on their metabolic strategy..
 
-Some hypothesis for how environmental factors could cause shifts in community composition:
+**Some hypothesis for how light iradiance could cause shifts in community composition:**
 
--   I think one of the most consequential environmental factors is most likely nitrogen availability, which would limit an organisms ability to maintain it's metabolism. We know from our lectures and from the incredible data gathered at Station Aloha that nitrogen concentration increases with depth past the DCM.
+-   Primary producers vary in the provided data, with some having more abundance at the surface, and others at the DCM. Particularly the eukaryote Dictyochophyceae seems to prefer the DCM. Some plankton are more adapted to these low light conditions and others like Pyramimonadales appear to prefer the surface.
 
-    -   **Ex Situ:** perhaps using environmental samples we could alter the physical condition of light (light dark bottles in the lab?) and note how diversity and thus nutrient concentrations change over time?
+    -   **Ex Situ:** Taking samples from various depths via niskin bottles one could conduct an incubation experiment (maybe first after dilution?) where the samples from each depth are exposed to light irradiance levels that would reflect the opposite of which they were derived. Does the community start to shift in a direction that reflects it's counterpart?
 
-    -   **In Situ:** I think a good in situ experimental approach might be some kind of "Nitrate Ocean Timeseries" (NOT?) where we measure nitrogen concentrations and associate them with microbial diversity.
+    -   **In Situ:** Measuring responses to light in situ I think is more challenging, as mesocosms or more representative samples are difficult in the open ocean. The work being done by the Hawaii Ocean Timeseries I think reflects one of the only real ways to collect truly "in situ" data from this environment. Perhaps one could contrive some kind of isolation of water from one depth and moving it in the water column to another, measuring community shift over time.
 
--   Adding on to the previous hypothesis, how could we demonstrate that *nitrifying archaea* play a key role in the availability of nitrates in the DCM?
+**Hypothesis for nutrient concentrations and diversity:**
 
-    -   ex situ this could be demonstrated by using the aformentioned environmental samples and comparing the production of nitrate under low light conditions with control and archaea added experimental groups - who produces more nitrate?
+-   Nitrogen is frequently limiting in the oligotrophic gyres, and both producers and consumers rely on it to maintain their metabolism. From the surface ocean to the DCM nitrogen should be limiting, due to the presence of photosynthetic microorganisms. As depth increases and photosynthesis becomes less possible, nitrogen should increase as a function of depth.
 
-    -   This could be demonstrated in situ through the use of metagenomics techniques looking for organisms who possess known genes for nitrification, identifying them taxonomically, and comparing nutrient availability - are the archaea there? are they nitrifying? and and is nitrate indeed elevated?
+    -   **Ex Situ:** I would pursue a similar method as described above for light ex situ. Altering concentrations of nitrogen would likely cause limitations in primary producers at the low end of the concentration spectrum, and blooms at the higher end.
+
+    -   **In Situ:** This could be demonstrated in situ through the use of metagenomics techniques looking for organisms who possess known genes for nitrification, identifying them taxonomically, and comparing nutrient availability - are the archaea there? are they nitrifying? and and is nitrate indeed elevated?
